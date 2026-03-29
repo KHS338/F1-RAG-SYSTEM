@@ -5,7 +5,21 @@ from pydantic import BaseModel
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_groq import ChatGroq
+from fastapi.middleware.cors import CORSMiddleware # Add this import
+import os
 
+app = FastAPI()
+
+# Add this block right after initializing app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000/"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ... (keep the rest of your api.py code exactly the same below this)
 try:
     from dotenv import load_dotenv
 except ImportError:
@@ -13,6 +27,14 @@ except ImportError:
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if load_dotenv is not None:
     load_dotenv()
@@ -67,13 +89,15 @@ def ask_oracle(query: Query):
     )
 
     prompt = f"""
-    You are the FIA Race Director's strict AI assistant. Answer the user's scenario using ONLY the provided sporting regulations.
-    If the rules do not explicitly cover the scenario, state that clearly. Do not guess.
-    Always cite the exact Article number you are referencing in your response.
-
-    Official Regulations:
+    You are the FIA Race Director's AI assistant. 
+    Use the following Official Regulations chunks to answer the user's scenario. 
+    
+    If the provided text contains the answer, summarize it clearly and ALWAYS cite the specific Article number and explain it in easy words.
+    If the provided text does NOT contain the answer, politely state that you cannot find the specific rule in your current retrieved context. Do not make up a rule.
+    
+    Official Regulations Context:
     {context}
-
+    
     User Scenario: {query.question}
     """
 
